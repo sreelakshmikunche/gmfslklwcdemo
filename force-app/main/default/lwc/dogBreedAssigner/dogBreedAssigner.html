@@ -1,0 +1,116 @@
+<template>
+    <lightning-card
+        title="Amy's Dog Kennel - Assign Dog Fact"
+        icon-name="utility:animal_and_nature">
+        <div class="component-container">
+            <section class="customer-section">
+                <div class="section-heading">
+                    <h2>Customer Information</h2>
+                    <p>
+                        Enter the recipient's details, then select a breed
+                        fact to assign.
+                    </p>
+                </div>
+
+                <div class="input-grid">
+                    <lightning-input
+                        label="First Name"
+                        value={firstName}
+                        onchange={handleFirstNameChange}
+                        required>
+                    </lightning-input>
+
+                    <lightning-input
+                        label="Last Name"
+                        value={lastName}
+                        onchange={handleLastNameChange}
+                        required>
+                    </lightning-input>
+                </div>
+
+                <lightning-button
+                    class="get-breeds-button"
+                    label="Get Breeds"
+                    variant="brand"
+                    onclick={handleGetBreeds}
+                    disabled={isGetBreedsDisabled}>
+                </lightning-button>
+            </section>
+
+            <template if:true={isLoading}>
+                <div class="spinner-container">
+                    <lightning-spinner
+                        alternative-text="Loading breeds"
+                        size="medium">
+                    </lightning-spinner>
+                </div>
+            </template>
+
+            <template if:true={showTable}>
+                <section class="breed-section">
+                    <div class="section-heading breed-heading">
+                        <div>
+                            <h2>Select a Dog Breed</h2>
+                            <p>
+                                Choose one breed to assign its fact to the
+                                customer.
+                            </p>
+                        </div>
+
+                        <span class="record-count">
+                            {totalRecords} breeds
+                        </span>
+                    </div>
+
+                    <div class="table-container">
+                        <lightning-datatable
+                            key-field="id"
+                            data={breedData}
+                            columns={columns}
+                            max-row-selection="1"
+                            selected-rows={selectedRows}
+                            onrowselection={handleRowSelection}>
+                        </lightning-datatable>
+                    </div>
+
+                    <div class="pagination">
+                        <span class="record-summary">
+                            Page {pageNumber} of {lastPage}
+                            ({totalRecords} breeds)
+                        </span>
+
+                        <div class="pagination-actions">
+                            <lightning-button
+                                label="Previous"
+                                icon-name="utility:chevronleft"
+                                onclick={handlePrevious}
+                                disabled={isFirstPage}>
+                            </lightning-button>
+
+                            <lightning-button
+                                label="Next"
+                                icon-name="utility:chevronright"
+                                icon-position="right"
+                                onclick={handleNext}
+                                disabled={isLastPage}>
+                            </lightning-button>
+                        </div>
+                    </div>
+
+                    <footer class="action-footer">
+                        <span class="selection-message">
+                            Select a breed to continue
+                        </span>
+
+                        <lightning-button
+                            label="Assign Selected Dog Fact"
+                            variant="success"
+                            onclick={handleAssignFact}
+                            disabled={isAssignDisabled}>
+                        </lightning-button>
+                    </footer>
+                </section>
+            </template>
+        </div>
+    </lightning-card>
+</template>

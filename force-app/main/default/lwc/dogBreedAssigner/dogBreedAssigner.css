@@ -1,0 +1,125 @@
+:host {
+    --navy: #102f52;
+    --blue: #0176d3;
+    --background: #f3f3f3;
+    --border: #c9c9c9;
+    --text-secondary: #5c5c5c;
+
+    display: block;
+}
+
+.component-container {
+    background: white;
+}
+
+.customer-section {
+    padding: 1.5rem;
+}
+
+.section-heading {
+    margin-bottom: 1.25rem;
+}
+
+.section-heading h2 {
+    margin: 0 0 0.25rem;
+    color: var(--navy);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.section-heading p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+}
+
+.input-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    max-width: 48rem;
+    margin-bottom: 1.25rem;
+}
+
+.get-breeds-button {
+    display: inline-block;
+}
+
+.spinner-container {
+    position: relative;
+    min-height: 6rem;
+}
+
+.breed-section {
+    border-top: 1px solid #e5e5e5;
+}
+
+.breed-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    margin: 0;
+    background: #f7f9fb;
+}
+
+.record-count {
+    padding: 0.25rem 0.625rem;
+    border: 1px solid #d8dde6;
+    border-radius: 1rem;
+    color: #444;
+    background: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.table-container {
+    min-height: 21.875rem;
+    overflow-x: auto;
+}
+
+.pagination {
+    min-height: 3.75rem;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-top: 1px solid #e5e5e5;
+}
+
+.record-summary,
+.selection-message {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.pagination-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-footer {
+    min-height: 4.625rem;
+    padding: 0.875rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    border-top: 1px solid #e5e5e5;
+    background: #fafafa;
+}
+
+@media screen and (max-width: 48rem) {
+    .input-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .breed-heading,
+    .pagination,
+    .action-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
