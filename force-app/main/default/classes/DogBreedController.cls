@@ -77,11 +77,29 @@ public with sharing class DogBreedController {
         return result;
     }
 
+    //Check before insertion
+    @AuraEnabled(cacheable=true)
+    public static Boolean checkDuplicateBreed(String firstName, String lastName, String dogBreed) {
+        if (String.isBlank(firstName) || String.isBlank(lastName) || String.isBlank(dogBreed)) {
+            return false;
+        }
+
+        String uniqueKey = firstName.toLowerCase() + ' ' + lastName.toLowerCase() + '_' + dogBreed.toLowerCase();
+
+        Integer count = [
+            SELECT COUNT() 
+            FROM  Assigned_Dog_Facts__c
+            WHERE Unique_User_Breed__c = :uniqueKey
+            WITH USER_MODE
+        ];
+
+        return count > 0;
+    }
     
     //Save selected breed to Salesforce object
     
     @AuraEnabled
-    public static void saveAssignedDogFact(String firstName, String lastName, String strSelectedBreed) {
+    public static Assigned_Dog_Facts__c saveAssignedDogFact(String firstName, String lastName, String strSelectedBreed) {
         BreedData selectedBreed = (BreedData) JSON.deserialize(strSelectedBreed, BreedData.class);
         // System.debug('selected breed : '+ JSON.serialize(selectedBreed) );
 
@@ -102,8 +120,12 @@ public with sharing class DogBreedController {
         newFact.Requested_Date_Time__c = System.now();
 
         try {
-            insert newFact;
+            insert AS USER newFact;
+            return newFact;
         } 
+        catch (DmlException e) {
+            throw new AuraHandledException('This user has already been assigned this dog breed.');
+        }
         catch (Exception e) {
             throw new AuraHandledException('Failed to save assignment: ' + e.getMessage());
         }

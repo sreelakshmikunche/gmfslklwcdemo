@@ -12,6 +12,13 @@
                     </p>
                 </div>
 
+                <template if:true={isDuplicate}>
+                <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error slds-m-bottom_medium" role="alert">
+                    <span class="slds-assistive-text">error</span>
+                    <h2>{duplicateMessage}</h2>
+                </div>
+            </template>
+
                 <div class="input-grid">
                     <lightning-input
                         label="First Name"

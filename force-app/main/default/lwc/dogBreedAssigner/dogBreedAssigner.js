@@ -1,5 +1,6 @@
 import { LightningElement, track } from 'lwc';
 import getDogBreeds from '@salesforce/apex/DogBreedController.getDogBreeds';
+import checkDuplicateBreed from '@salesforce/apex/DogBreedController.checkDuplicateBreed';
 import saveAssignedDogFact from '@salesforce/apex/DogBreedController.saveAssignedDogFact';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
@@ -14,6 +15,9 @@ const COLUMNS = [
 export default class DogBreedAssigner extends LightningElement {
     firstName = '';
     lastName = '';
+    selectedBreed = '';
+    isDuplicate = false;
+    duplicateMessage = '';
     @track breedData = [];
     columns = COLUMNS;
     
@@ -31,7 +35,7 @@ export default class DogBreedAssigner extends LightningElement {
     }
 
     get isAssignDisabled() {
-        return !this.selectedRow;
+        return !this.firstName || !this.lastName || !this.selectedRow ;
     }
 
     get isFirstPage() {
@@ -91,7 +95,7 @@ export default class DogBreedAssigner extends LightningElement {
         }
     }
 
-    handleRowSelection(event) {
+    async handleRowSelection(event) {
         try{
             const selectedRows = event.detail.selectedRows;
             console.log('Selected rows: ', JSON.stringify(selectedRows));
@@ -107,20 +111,81 @@ export default class DogBreedAssigner extends LightningElement {
                     maxLife: row.maxLife,
                     hypoallergenic: row.hypoallergenic 
                 };
+                this.selectedBreed = row.name;
             }
             else{
                 this.selectedRow = null;
+                this.selectedBreed ='';
             }
+
+            await this.validateDuplicate();
         }
         catch (error) {
             console.error('Error in row selection:', error.message, error.stack);
         }
     }
 
-    handleAssignFact() {
+    async validateDuplicate() {
+        this.isDuplicate = false;
+        this.duplicateMessage = '';
+
+        if (this.firstName && this.lastName && this.selectedBreed) {
+            try {
+                const duplicateExists = await checkDuplicateBreed({
+                    firstName: this.firstName,
+                    lastName: this.lastName,
+                    dogBreed: this.selectedBreed
+                });
+
+                if (duplicateExists) {
+                    this.isDuplicate = true;
+                    this.duplicateMessage = `${this.firstName} ${this.lastName} already has the breed '${this.selectedBreed}' assigned.`;
+                }
+            } catch (error) {
+                console.error('Validation error:', error);
+            }
+        }
+    }
+
+    async handleSave() {
+        // Double-check right before execution
+        await this.validateDuplicate();
+
+        if (this.isDuplicate) {
+            this.showToast('Duplicate Blocked', this.duplicateMessage, 'error');
+            return;
+        }
+
+        try {
+            await createDogRecord({
+                firstName: this.firstName,
+                lastName: this.lastName,
+                dogBreed: this.selectedBreed
+            });
+
+            this.showToast('Success', 'Dog breed successfully assigned!', 'success');
+            this.resetForm();
+        } catch (error) {
+            this.showToast('Error', error.body ? error.body.message : error.message, 'error');
+        }
+    }
+
+    resetForm() {
+        this.firstName = '';
+        this.lastName = '';
+        this.selectedBreed = '';
+        this.isDuplicate = false;
+        this.duplicateMessage = '';
+        const datatable = this.template.querySelector('lightning-datatable');
+        if (datatable) {
+            datatable.selectedRows = [];
+        }
+    }
+
+    async handleAssignFact() {
         if (!this.selectedRow) return;
         //console.log('Assigning fact for breed: ', this.selectedRow.description);
-        this.isLoading = true;
+        
         
         const cleanSelectedBreed = {
             id: String(this.selectedRow.id),
@@ -131,24 +196,47 @@ export default class DogBreedAssigner extends LightningElement {
             hypoallergenic: Boolean(this.selectedRow.hypoallergenic)
         };
         console.log('cleanSelectedBreed:', JSON.stringify(cleanSelectedBreed));
+        
+        this.isLoading = true;
 
-        saveAssignedDogFact({
-            firstName: this.firstName,
-            lastName: this.lastName,
-            strSelectedBreed: JSON.stringify(cleanSelectedBreed)
-        })
-        .then(() => {
+        try {
+            // Tier 1: Check for duplicates before hitting save
+            const duplicateExists = await checkDuplicateBreed({
+                firstName: this.firstName,
+                lastName: this.lastName,
+                dogBreed: cleanSelectedBreed.name
+            });
+
+            if (duplicateExists) {
+                this.isLoading = false;
+                this.showToast(
+                    'Duplicate Record', 
+                    `${this.firstName} ${this.lastName} already has the breed '${cleanSelectedBreed.name}' assigned.`, 
+                    'error'
+                );
+                return; // Stop execution here
+            }
+
+            // Proceed to save the record/fact if no duplicate exists
+            await saveAssignedDogFact({
+                firstName: this.firstName,
+                lastName: this.lastName,
+                strSelectedBreed: JSON.stringify(cleanSelectedBreed)
+            });
+
             this.isLoading = false;
             this.showToast(
                 'Success', 
                 `Assigned ${cleanSelectedBreed.name} facts to ${this.firstName} ${this.lastName}`, 
                 'success'
             );
-        })
-        .catch(error => {
+        }
+        catch (error) {
             this.isLoading = false;
+            // This will also catch Tier 2 database unique constraint exceptions if they happen
             this.showToast('Error', error.body ? error.body.message : error.message, 'error');
-        });
+        }
+        
     }
 
     showToast(title, message, variant) {
